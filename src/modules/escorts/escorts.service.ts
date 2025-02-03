@@ -19,7 +19,7 @@ export class EscortsService {
                 face_photo,
                 primary_body_photo,
                 secondary_body_photo,
-                status
+                status: Number(status)
             }
         })
 

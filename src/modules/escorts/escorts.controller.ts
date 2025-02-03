@@ -1,9 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { EscortsService } from './escorts.service';
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CreateEscortDto } from 'src/dto/escort.dto';
 import { EscortsTypes } from 'src/common/types/escortsTypes';
 import { EscortsSwaggerExamples } from 'src/common/swagger/escorts.example';
+import { MulterFileInterceptor } from 'src/common/interceptors/multer.interceptor';
 
 @Controller('escorts')
 export class EscortsController {
@@ -19,8 +20,18 @@ export class EscortsController {
             }
         }
     })
-    async create(@Body() body: CreateEscortDto) {
-        return this.service.create(body as EscortsTypes)
+    @UseInterceptors(MulterFileInterceptor([
+        { name: 'face_photo', maxCount: 1 },
+        { name: 'primary_body_photo', maxCount: 1 },
+        { name: 'secondary_body_photo', maxCount: 1 },
+    ]))
+    async create(@Body() body: CreateEscortDto, @UploadedFiles() files: { face_photo: Express.Multer.File[], primary_body_photo: Express.Multer.File[], secondary_body_photo: Express.Multer.File[] } ) {
+        return this.service.create({
+            ...body,
+            face_photo: files.face_photo[0].filename,
+            primary_body_photo: files.primary_body_photo[0].filename,
+            secondary_body_photo: files.secondary_body_photo[0].filename,
+        } as any)
     }
 
     @Get()
@@ -79,7 +90,7 @@ export class EscortsController {
         status: 200,
         content: {
             'application/json': {
-                example: {...EscortsSwaggerExamples, deleted_at: Date()}
+                example: { ...EscortsSwaggerExamples, deleted_at: Date() }
             }
         }
     })
